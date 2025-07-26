@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - Okiniki</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    ul {
+      list-style-type: none;
+      padding-left: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    button {
+      background-color: #d9534f;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #c9302c;
+    }
+    #delete-all {
+      background-color: #0275d8;
+      margin-bottom: 40px;
+    }
+    #delete-all:hover {
+      background-color: #025aa5;
+    }
+    .error-message {
+      color: red;
+      margin-bottom: 15px;
+    }
+    input.edit-post {
+      width: 70%;
+      padding: 4px 6px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button.update-btn {
+      background-color: #5cb85c;
+    }
+    button.update-btn:hover {
+      background-color: #449d44;
+    }
+    button.img-upload-btn {
+      background-color: #5bc0de;
+    }
+    button.img-upload-btn:hover {
+      background-color: #31b0d5;
+    }
+    img.post-image {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getStorage, ref as refStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgqTTVQp9wl6sgNdEKmDeTAjkey86Lmx8",
+      authDomain: "login-4c8d4.firebaseapp.com",
+      databaseURL: "https://login-4c8d4-default-rtdb.firebaseio.com",
+      projectId: "login-4c8d4",
+      storageBucket: "login-4c8d4.appspot.com",
+      messagingSenderId: "854716309265",
+      appId: "1:854716309265:web:1a4c5c3ffb12bc73eff6b0",
+      measurementId: "G-JM0WNG22GH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    const userList = document.getElementById("userList");
+    const messageList = document.getElementById("messageList");
+    const postList = document.getElementById("postList");
+    const errorMessage = document.getElementById("errorMessage");
+
+    function displayError(msg) {
+      errorMessage.textContent = msg;
+    }
+    function clearError() {
+      errorMessage.textContent = "";
+    }
+
+    function loadUsers() {
+      clearError();
+      const usersRef = ref(db, "users");
+      onValue(usersRef, (snapshot) => {
+        userList.innerHTML = "";
+        const users = snapshot.val();
+        if (!users) {
+          userList.innerHTML = "<li>No users found</li>";
+          return;
+        }
+        for (const uid in users) {
+          const userData = users[uid];
+          const email = userData.email || "No Email";
+          const phone = userData.phone || "No Phone";
+
+          const li = document.createElement("li");
+          li.textContent = `Email: ${email} | Phone: ${phone}`;
+
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.onclick = () => {
+            if (confirm(`Delete user:\nEmail: ${email}\nPhone: ${phone} ?`)) {
+              remove(ref(db, `users/${uid}`)).catch(err => displayError("Failed to delete user: " + err.message));
+            }
+          };
+          li.appendChild(delBtn);
+          userList.appendChild(li);
+        }
+      }, (error) => {
+        userList.innerHTML = "<li>Failed to load users.</li>";
+        displayError("Failed to load users. Check Firebase rules and network.");
+      });
+    }
+
+    function loadMessages() {
+      clearError();
+      const messagesRef = ref(db, "messages");
+      onValue(messagesRef, (snapshot) => {
+        messageList.innerHTML = "";
+        const messages = snapshot.val();
+        if (!messages) {
+          messageList.innerHTML = "<li>No messages found</li>";
+          return;
+        }
+        for (const id in messages) {
+          const msg = messages[id];
+          const user = msg.uid || "Unknown user";
+          const text = msg.text || "";
+
+          const li = document.createElement("li");
+          li.textContent = `[${user}] ${text}`;
+
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.onclick = () => {
+            if (confirm(`Delete this message from ${user}?`)) {
+              remove(ref(db, `messages/${id}`)).catch(err => displayError("Failed to delete message: " + err.message));
+            }
+          };
+          li.appendChild(delBtn);
+          messageList.appendChild(li);
+        }
+      }, (error) => {
+        messageList.innerHTML = "<li>Failed to load messages.</li>";
+        displayError("Failed to load messages. Check Firebase rules and network.");
+      });
+    }
+
+    function loadPosts() {
+      clearError();
+      const postsRef = ref(db, "posts");
+      onValue(postsRef, (snapshot) => {
+        postList.innerHTML = "";
+        const posts = snapshot.val();
+        if (!posts) {
+          postList.innerHTML = "<li>No posts found</li>";
+          return;
+        }
+        for (const id in posts) {
+          const post = posts[id];
+          const content = post.content || "";
+          const imageURL = post.imageURL || null;
+
+          const li = document.createElement("li");
+
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = content.replace(/<\/?[^>]+(>|$)/g, "");
+          input.classList.add("edit-post");
+
+          const updateBtn = document.createElement("button");
+          updateBtn.textContent = "Update";
+          updateBtn.classList.add("update-btn");
+          updateBtn.onclick = () => updatePost(id, input.value);
+
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.onclick = () => {
+            if (confirm("Delete this post?")) {
+              remove(ref(db, `posts/${id}`)).catch(err => displayError("Failed to delete post: " + err.message));
+            }
+          };
+
+          li.appendChild(input);
+          li.appendChild(updateBtn);
+          li.appendChild(delBtn);
+
+          if (imageURL) {
+            const img = document.createElement("img");
+            img.src = imageURL;
+            img.classList.add("post-image");
+            li.appendChild(img);
+          }
+
+          const fileInput = document.createElement("input");
+          fileInput.type = "file";
+          fileInput.accept = "image/*";
+
+          const uploadBtn = document.createElement("button");
+          uploadBtn.textContent = "Upload/Replace Image";
+          uploadBtn.classList.add("img-upload-btn");
+
+          uploadBtn.onclick = async () => {
+            if (fileInput.files.length === 0) {
+              alert("No file selected.");
+              return;
+            }
+
+            const file = fileInput.files[0];
+            const imageRef = refStorage(storage, `post-images/${id}/${file.name}`);
+
+            try {
+              await uploadBytes(imageRef, file);
+              const downloadURL = await getDownloadURL(imageRef);
+              await update(ref(db, `posts/${id}`), { imageURL: downloadURL });
+              alert("Image uploaded and linked successfully.");
+            } catch (err) {
+              displayError("Image upload failed: " + err.message);
+            }
+          };
+
+          li.appendChild(fileInput);
+          li.appendChild(uploadBtn);
+
+          postList.appendChild(li);
+        }
+      }, (error) => {
+        postList.innerHTML = "<li>Failed to load posts.</li>";
+        displayError("Failed to load posts. Check Firebase rules and network.");
+      });
+    }
+
+    function updatePost(id, newContent) {
+      if (!newContent.trim()) {
+        alert("Post content cannot be empty.");
+        return;
+      }
+
+      const safeContent = newContent.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      update(ref(db, `posts/${id}`), { content: safeContent })
+        .then(() => alert("Post updated successfully."))
+        .catch((err) => displayError("Failed to update post: " + err.message));
+    }
+
+    function deleteAllMessages() {
+      if (confirm("Are you sure you want to delete ALL messages?")) {
+        remove(ref(db, "messages")).catch(err => displayError("Failed to delete all messages: " + err.message));
+      }
+    }
+
+    window.deleteAllMessages = deleteAllMessages;
+
+    onAuthStateChanged(auth, (user) => {
+      const adminEmail = "foryunojuno@gmail.com";
+      if (!user || user.email.toLowerCase() !== adminEmail.toLowerCase()) {
+        alert("Access denied. Only the admin can access this panel.");
+        window.location.href = "login.html";
+        return;
+      }
+      loadUsers();
+      loadMessages();
+      loadPosts();
+    });
+  </script>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  <p id="errorMessage" class="error-message"></p>
+
+  <h2>Registered Users</h2>
+  <ul id="userList">Loading users...</ul>
+
+  <h2>Chat Messages</h2>
+  <ul id="messageList">Loading messages...</ul>
+
+  <h2>Posts Management</h2>
+  <ul id="postList">Loading posts...</ul>
+
+  <button id="delete-all" onclick="deleteAllMessages()">Delete All Messages</button>
+  <p><a href="dashboard.html">Back to Dashboard</a></p>
+</body>
+</html>

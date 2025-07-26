@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Okiniki – Register</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=6Ld9zowrAAAAAFlmFoJ9x08MZXl2x3bw50CaTm1e"></script>
+  <style>
+    .container {
+      max-width: 400px;
+      margin: 4rem auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      font-family: 'Inter', sans-serif;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background: #8e2de2;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #4a00e0;
+    }
+    .message {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Okiniki – Register</h1>
+    <form id="register-form">
+      <input id="email" type="email" placeholder="Email" required />
+      <input id="password" type="password" placeholder="Password" required minlength="6" />
+      <input id="confirm-password" type="password" placeholder="Confirm Password" required minlength="6" />
+      <div style="display: flex; gap: 8px;">
+        <select id="country-code" style="flex: 1;">
+          <option value="+82">+82</option>
+          <option value="+1">+1</option>
+          <option value="+44">+44</option>
+          <option value="+81">+81</option>
+        </select>
+        <input id="phone" type="tel" placeholder="Phone (e.g. 01012345678)" required style="flex: 2;" />
+      </div>
+      <button type="submit">Register</button>
+      <p id="message" class="message"></p>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      fetchSignInMethodsForEmail,
+      sendEmailVerification,
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgqTTVQp9wl6sgNdEKmDeTAjkey86Lmx8",
+      authDomain: "login-4c8d4.firebaseapp.com",
+      projectId: "login-4c8d4",
+      storageBucket: "login-4c8d4.appspot.com",
+      messagingSenderId: "854716309265",
+      appId: "1:854716309265:web:1a4c5c3ffb12bc73eff6b0",
+      measurementId: "G-JM0WNG22GH",
+      databaseURL: "https://login-4c8d4-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    const form = document.getElementById("register-form");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const countryCode = document.getElementById("country-code");
+    const phoneInput = document.getElementById("phone");
+    const messageP = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      messageP.style.color = "red";
+      messageP.textContent = "";
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      const phone = countryCode.value + phoneInput.value.trim();
+
+      if (!email || !password || !confirmPassword || !phone) {
+        messageP.textContent = "Please fill in all fields.";
+        return;
+      }
+      if (password !== confirmPassword) {
+        messageP.textContent = "Passwords do not match.";
+        return;
+      }
+      if (password.length < 6) {
+        messageP.textContent = "Password must be at least 6 characters.";
+        return;
+      }
+
+      try {
+        const token = await grecaptcha.enterprise.execute("6Ld9zowrAAAAAFlmFoJ9x08MZXl2x3bw50CaTm1e", { action: "submit" });
+
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.length > 0) {
+          messageP.textContent = "This email is already registered.";
+          return;
+        }
+
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+
+        await set(ref(database, "users/" + userCred.user.uid), {
+          email: email,
+          phone: phone,
+          recaptchaToken: token
+        });
+
+        // Send email verification with continue URL (redirect)
+        await sendEmailVerification(userCred.user, {
+          url: window.location.origin + "/verify.html"
+        });
+
+        messageP.style.color = "green";
+        messageP.textContent = "Registered! Please check your email and verify before logging in.";
+        form.reset();
+      } catch (err) {
+        messageP.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Okiniki – Verify Email</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .container {
+      max-width: 400px;
+      margin: 4rem auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 1.5rem;
+    }
+    p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    a {
+      color: #8e2de2;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Okiniki – Email Verification</h1>
+    <p id="message" class=""></p>
+    <a href="login.html" id="login-link" style="display:none;">Return to Login</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      applyActionCode,
+      checkActionCode
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgqTTVQp9wl6sgNdEKmDeTAjkey86Lmx8",
+      authDomain: "login-4c8d4.firebaseapp.com",
+      projectId: "login-4c8d4",
+      storageBucket: "login-4c8d4.appspot.com",
+      messagingSenderId: "854716309265",
+      appId: "1:854716309265:web:1a4c5c3ffb12bc73eff6b0",
+      measurementId: "G-JM0WNG22GH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const messageEl = document.getElementById("message");
+    const loginLink = document.getElementById("login-link");
+
+    // Get the oobCode from the URL query string
+    const params = new URLSearchParams(window.location.search);
+    const oobCode = params.get("oobCode");
+
+    if (!oobCode) {
+      messageEl.textContent = "Invalid verification link.";
+      messageEl.className = "error";
+    } else {
+      // Optional: check if the code is valid first
+      checkActionCode(auth, oobCode).then(() => {
+        // Apply the verification code
+        applyActionCode(auth, oobCode)
+          .then(() => {
+            messageEl.textContent = "Your email has been successfully verified!";
+            messageEl.className = "success";
+            loginLink.style.display = "inline-block";
+          })
+          .catch((error) => {
+            messageEl.textContent = "Error verifying email: " + error.message;
+            messageEl.className = "error";
+            loginLink.style.display = "inline-block";
+          });
+      }).catch((error) => {
+        messageEl.textContent = "Invalid or expired verification link.";
+        messageEl.className = "error";
+        loginLink.style.display = "inline-block";
+      });
+    }
+  </script>
+</body>
+</html>

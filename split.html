@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Okiniki – Posts & Chat</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+    }
+    #header {
+      background: #8e2de2;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      box-shadow: 0 2px 8px rgb(142 45 226 / 0.4);
+    }
+    #logoutBtn {
+      background: #5b15b9;
+      border: none;
+      color: white;
+      padding: 0.5rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+    #logoutBtn:hover {
+      background: #3a0782;
+    }
+    iframe {
+      flex: 1;
+      height: calc(100% - 52px); /* header height */
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <button id="logoutBtn">Logout</button>
+  </div>
+  <iframe src="posts.html" title="Posts"></iframe>
+  <iframe src="dashboard.html" title="Chat"></iframe>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgqTTVQp9wl6sgNdEKmDeTAjkey86Lmx8",
+      authDomain: "login-4c8d4.firebaseapp.com",
+      databaseURL: "https://login-4c8d4-default-rtdb.firebaseio.com",
+      projectId: "login-4c8d4",
+      storageBucket: "login-4c8d4.appspot.com",
+      messagingSenderId: "854716309265",
+      appId: "1:854716309265:web:1a4c5c3ffb12bc73eff6b0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+</body>
+</html>
