@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset 
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://yunoweb.asuscomm.com:80/index.html</loc>
+    <priority>1.00</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://yunoweb.asuscomm.com:80/login.html</loc>
+    <priority>0.80</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://yunoweb.asuscomm.com:80/register.html</loc>
+    <priority>0.80</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://yunoweb.asuscomm.com:80/dashboard.html</loc>
+    <priority>0.90</priority>
+    <changefreq>daily</changefreq>
+  </url>
+
+  <url>
+    <loc>https://yunoweb.asuscomm.com:80/admin-panel.html</loc>
+    <priority>0.70</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+</urlset>
